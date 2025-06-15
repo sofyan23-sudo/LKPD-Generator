@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Generator GuruPintar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+    <script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .dark .prose-dark { color: #d1d5db; }
+        .dark .prose-dark h1, .dark .prose-dark h2, .dark .prose-dark h3 { color: #f9fafb; }
+        .dark .prose-dark strong { color: #f9fafb; }
+        .dark .prose-dark blockquote { border-left-color: #4b5563; color: #9ca3af; }
+        .dark .prose-dark code { color: #e5e7eb; }
+        .prose table { width: 100%; border-collapse: collapse; margin-top: 1em; margin-bottom: 1em; }
+        .prose th, .prose td { border: 1px solid #d1d5db; padding: 8px; }
+        .dark .prose th, .dark .prose td { border: 1px solid #4b5563; }
+        .prose th { background-color: #f3f4f6; font-weight: 600; }
+        .dark .prose th { background-color: #374151; }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        .dark ::-webkit-scrollbar-track { background: #2d3748; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        /* File input styling */
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-input-button {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background-color: white;
+        }
+        .dark .file-input-button {
+            border-color: #4b5563;
+            background-color: #374151;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+
+    <div class="flex flex-col lg:flex-row min-h-screen">
+        <!-- Sidebar/Control Panel -->
+        <aside class="w-full lg:w-1/3 xl:w-1/4 bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-lg lg:h-screen lg:sticky lg:top-0 flex flex-col">
+            <div class="flex-grow overflow-y-auto">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <img src="https://gmtzbgbhxhrhymkfcytj.supabase.co/storage/v1/object/public/file.pel4tihan//Logo%20Baru%20Komunitas%20GuruPintar.png" alt="Logo GuruPintar" class="h-12 w-auto mb-2" onerror="this.style.display='none'">
+                        <h1 class="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">LKPD Generator GuruPintar</h1>
+                    </div>
+                    <button id="theme-toggle" class="px-3 py-2 rounded-md text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 flex-shrink-0">
+                        <i class="fas fa-sun"></i>
+                    </button>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                    Buat Lembar Kerja Peserta Didik (LKPD) dan rubrik penilaian secara otomatis dengan bantuan AI. Cepat, mudah, dan disesuaikan dengan kebutuhan Anda.
+                </p>
+                
+                <form id="lkpd-form" class="space-y-4">
+                    <div>
+                        <label for="subject" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Mata Pelajaran</label>
+                        <input type="text" id="subject" name="subject" placeholder="Contoh: Biologi" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="grade" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Kelas</label>
+                        <input type="text" id="grade" name="grade" placeholder="Contoh: XI SMA" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                     <div>
+                        <label for="objectives" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tujuan Pembelajaran</label>
+                        <textarea id="objectives" name="objectives" rows="3" required placeholder="Masukkan tujuan pembelajaran..." class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    <div>
+                        <label for="topic" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Judul Materi/Topik</label>
+                        <input type="text" id="topic" name="topic" placeholder="Contoh: Sel Tumbuhan dan Hewan" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Unggah File Materi (Opsional)</label>
+                        <div class="mt-1 flex items-center space-x-2">
+                            <div class="file-input-wrapper">
+                                 <button type="button" class="file-input-button">
+                                    <i class="fas fa-upload mr-2"></i> Pilih File PDF
+                                </button>
+                                <input type="file" id="material-file" name="material-file" accept=".pdf">
+                            </div>
+                            <span id="file-name" class="text-sm text-gray-500 dark:text-gray-400 truncate"></span>
+                            <button type="button" id="clear-file" class="hidden text-red-500 hover:text-red-700 text-xl font-bold">&times;</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="method" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Metode Pembelajaran</label>
+                        <select id="method" name="method" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Diskusi">Diskusi</option>
+                            <option value="Observasi">Observasi</option>
+                            <option value="Simulasi">Simulasi</option>
+                            <option value="Praktik">Praktik</option>
+                            <option value="Eksperimen">Eksperimen</option>
+                        </select>
+                    </div>
+                    
+                    <div class="pt-4 space-y-3">
+                        <button type="button" id="generate-lkpd" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" disabled>
+                            <i class="fas fa-file-alt mr-2 mt-0.5"></i> Buat LKPD / Worksheet
+                        </button>
+                        <button type="button" id="generate-rubric" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500" disabled>
+                            <i class="fas fa-tasks mr-2 mt-0.5"></i> Buat Rubrik Penilaian
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold mb-3">Ekspor Dokumen</h3>
+                    <div class="space-y-3">
+                        <button id="export-word" class="w-full flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700" disabled>
+                            <i class="fas fa-file-word mr-2 mt-0.5"></i> Ekspor ke Word
+                        </button>
+                        <button id="export-pdf" class="w-full flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700" disabled>
+                            <i class="fas fa-file-pdf mr-2 mt-0.5"></i> Ekspor ke PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+             <div class="mt-auto pt-6 text-center text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                <p>Dibuat oleh Sofyan Andi, S.Si.</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="w-full lg:w-2/3 xl:w-3/4 p-4 sm:p-6 lg:p-8">
+            <div id="output-container" class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 sm:p-8 h-full prose prose-lg max-w-none dark:prose-dark overflow-y-auto">
+                <div id="placeholder" class="text-center text-gray-500 dark:text-gray-400 flex flex-col items-center justify-center h-full">
+                    <i class="fas fa-file-import fa-4x mb-4"></i>
+                    <h2 class="text-2xl font-semibold">Selamat Datang!</h2>
+                    <p class="mt-2">Hasil LKPD dan rubrik penilaian Anda akan muncul di sini.</p>
+                    <p class="text-sm mt-1">Isi formulir di samping dan klik "Buat LKPD" untuk memulai.</p>
+                </div>
+                <div id="loader" class="hidden justify-center items-center h-full">
+                    <div class="loader"></div>
+                    <p class="ml-4 text-lg">Membuat dokumen, mohon tunggu...</p>
+                </div>
+                <div id="content"></div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        // Theme Toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = themeToggle.querySelector('i');
+
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            themeIcon.classList.remove('fa-sun');
+            themeIcon.classList.add('fa-moon');
+        } else {
+            document.documentElement.classList.remove('dark');
+            themeIcon.classList.remove('fa-moon');
+            themeIcon.classList.add('fa-sun');
+        }
+
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('color-theme', isDark ? 'dark' : 'light');
+            
+            if (isDark) {
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            } else {
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            }
+        });
+
+        // Element References
+        const form = document.getElementById('lkpd-form');
+        const generateLkpdBtn = document.getElementById('generate-lkpd');
+        const generateRubricBtn = document.getElementById('generate-rubric');
+        const exportWordBtn = document.getElementById('export-word');
+        const exportPdfBtn = document.getElementById('export-pdf');
+        const contentDiv = document.getElementById('content');
+        const placeholderDiv = document.getElementById('placeholder');
+        const loaderDiv = document.getElementById('loader');
+        const materialFileInput = document.getElementById('material-file');
+        const fileNameSpan = document.getElementById('file-name');
+        const clearFileBtn = document.getElementById('clear-file');
+
+
+        let lastGeneratedContent = '';
+        
+        // Form Validation & Button State
+        function validateForm() {
+            const subject = document.getElementById('subject').value.trim();
+            const grade = document.getElementById('grade').value.trim();
+            const topic = document.getElementById('topic').value.trim();
+            const objectives = document.getElementById('objectives').value.trim();
+            return subject && grade && topic && objectives;
+        }
+        
+        form.addEventListener('input', () => {
+           generateLkpdBtn.disabled = !validateForm();
+        });
+
+        // File input logic
+        materialFileInput.addEventListener('change', () => {
+            if (materialFileInput.files.length > 0) {
+                fileNameSpan.textContent = materialFileInput.files[0].name;
+                clearFileBtn.classList.remove('hidden');
+            }
+        });
+
+        clearFileBtn.addEventListener('click', () => {
+            materialFileInput.value = ''; // Clear the file input
+            fileNameSpan.textContent = '';
+            clearFileBtn.classList.add('hidden');
+        });
+
+
+        // Function to call Gemini API
+        async function generateContentFromApi(prompt) {
+            placeholderDiv.style.display = 'none';
+            contentDiv.innerHTML = '';
+            loaderDiv.style.display = 'flex';
+            
+            const apiKey = ""; // API key is handled by the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.6,
+                    topP: 0.9,
+                    topK: 40,
+                }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    console.error('Unexpected API response structure:', result);
+                    return "<p>Maaf, terjadi kesalahan saat menghasilkan konten. Respon dari server tidak sesuai format yang diharapkan.</p>";
+                }
+            } catch (error)
+            {
+                console.error("Error fetching from API:", error);
+                return `<p>Gagal terhubung ke server. Pastikan koneksi internet Anda stabil dan coba lagi. Detail: ${error.message}</p>`;
+            } finally {
+                loaderDiv.style.display = 'none';
+            }
+        }
+
+        // --- NEW UNIFIED MARKDOWN TO HTML CONVERTER ---
+        function markdownToHtml(md) {
+            // Function to handle inline markdown
+            const inlineMd = (text) => {
+                return text
+                    .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+            };
+
+            const blocks = md.split('\n');
+            let html = '';
+            let inTable = false;
+            let inList = null; // null, 'ul', or 'ol'
+
+            for (let i = 0; i < blocks.length; i++) {
+                let line = blocks[i];
+                
+                // Close list if current line is not a list item
+                if (inList && !line.match(/^(\* |-| \d+\.\s)/)) {
+                    html += (inList === 'ul') ? '</ul>' : '</ol>';
+                    inList = null;
+                }
+                // Close table if current line is not a table row
+                if (inTable && !line.startsWith('|')) {
+                    html += '</tbody></table>';
+                    inTable = false;
+                }
+
+                // Headers
+                if (line.startsWith('### ')) {
+                    html += `<h3>${inlineMd(line.substring(4))}</h3>`;
+                } else if (line.startsWith('## ')) {
+                    html += `<h2>${inlineMd(line.substring(3))}</h2>`;
+                } else if (line.startsWith('# ')) {
+                    html += `<h1>${inlineMd(line.substring(2))}</h1>`;
+                } 
+                // Table
+                else if (line.startsWith('|')) {
+                    const cells = line.slice(1, line.endsWith('|') ? -1 : undefined).split('|').map(c => c.trim());
+                    if (!inTable) {
+                        // This is the header row
+                        inTable = true;
+                        html += '<table><thead><tr>';
+                        cells.forEach(cell => {
+                            html += `<th>${inlineMd(cell)}</th>`;
+                        });
+                        html += '</tr></thead><tbody>';
+                        // Skip separator line if it exists
+                        if (i + 1 < blocks.length && blocks[i+1].includes('---') && blocks[i+1].startsWith('|')) {
+                            i++;
+                        }
+                    } else {
+                        // This is a body row
+                        html += '<tr>';
+                        cells.forEach(cell => {
+                            html += `<td>${inlineMd(cell)}</td>`;
+                        });
+                        html += '</tr>';
+                    }
+                }
+                // Unordered List
+                else if (line.startsWith('* ') || line.startsWith('- ')) {
+                    if (inList !== 'ul') {
+                        html += '<ul>';
+                        inList = 'ul';
+                    }
+                    html += `<li>${inlineMd(line.substring(2))}</li>`;
+                }
+                // Ordered List
+                else if (line.match(/^\d+\.\s/)) {
+                     if (inList !== 'ol') {
+                        html += '<ol>';
+                        inList = 'ol';
+                    }
+                    html += `<li>${inlineMd(line.replace(/^\d+\.\s/, ''))}</li>`;
+                }
+                // Paragraphs and line breaks
+                else {
+                    if (line.trim() !== '') {
+                        html += `<p>${inlineMd(line)}</p>`;
+                    }
+                }
+            }
+
+            // Close any open tags at the end
+            if (inList) {
+                html += (inList === 'ul') ? '</ul>' : '</ol>';
+            }
+            if (inTable) {
+                html += '</tbody></table>';
+            }
+
+            return html;
+        }
+
+        // Event Listener for LKPD Generation
+        generateLkpdBtn.addEventListener('click', async () => {
+            if (!validateForm()) {
+                alert("Mohon lengkapi semua field yang wajib diisi: Mata Pelajaran, Kelas, Tujuan Pembelajaran, dan Judul Materi.");
+                return;
+            }
+
+            const subject = document.getElementById('subject').value;
+            const grade = document.getElementById('grade').value;
+            const topic = document.getElementById('topic').value;
+            const method = document.getElementById('method').value;
+            const objectives = document.getElementById('objectives').value;
+            const materialFile = materialFileInput.files[0];
+
+            let materialInstruction;
+            if (materialFile) {
+                materialInstruction = `
+                **Sumber Belajar Utama:** Sebuah file PDF dengan nama "${materialFile.name}" yang telah disediakan untuk siswa.
+                **Landasan Teori/Informasi Pendukung:** Tulis SATU paragraf pengantar singkat yang mengarahkan siswa untuk membaca dan menggunakan informasi dari file PDF yang telah mereka terima untuk menyelesaikan tugas-tugas dalam LKPD ini. JANGAN menulis ringkasan materi yang panjang.
+                `;
+            } else {
+                 materialInstruction = `
+                **Landasan Teori/Informasi Pendukung:** Sajikan ringkasan materi singkat (1-2 paragraf) yang relevan dengan topik "${topic}".
+                `;
+            }
+
+            const prompt = `
+                Anda adalah seorang ahli perancang kurikulum dan guru berpengalaman.
+                Buatkan sebuah Lembar Kerja Peserta Didik (LKPD) yang lengkap, terstruktur, dan menarik berdasarkan informasi berikut:
+
+                - **Mata Pelajaran:** ${subject}
+                - **Kelas:** ${grade}
+                - **Judul Topik:** ${topic}
+                - **Metode Pembelajaran:** ${method}
+
+                Gunakan **Tujuan Pembelajaran** di bawah ini yang sudah ditentukan oleh pengguna. Anda HARUS menyalinnya sama persis ke dalam LKPD dan DILARANG membuat atau menambah tujuan baru:
+                ---
+                ${objectives}
+                ---
+
+                Instruksi untuk bagian materi:
+                ${materialInstruction}
+                
+                Struktur LKPD harus mencakup bagian-bagian berikut:
+                1.  **Judul LKPD:** Buat judul yang kreatif dan relevan dengan topik.
+                2.  **Identitas:** Sediakan kolom untuk Nama, Kelas, dan Tanggal.
+                3.  **Tujuan Pembelajaran:** (Salin persis tujuan pembelajaran yang diberikan pengguna di atas).
+                4.  **Petunjuk Pengerjaan:** Berikan instruksi yang singkat dan jelas.
+                5.  **Landasan Teori/Informasi Pendukung:** (Ikuti instruksi materi yang diberikan di atas).
+                6.  **Langkah-Langkah Kegiatan (INI BAGIAN UTAMA):** Rancang aktivitas yang detail dan sesuai dengan metode "${method}". Jika sumber belajar utama adalah PDF, pastikan langkah kegiatannya mengarahkan siswa untuk aktif menggunakan PDF tersebut.
+                    - Jika **Diskusi:** Berikan pertanyaan pemicu, studi kasus, atau topik kontroversial untuk didiskusikan.
+                    - Jika **Observasi:** Buat tabel pengamatan terstruktur dan pertanyaan panduan. Pastikan membuat tabel menggunakan format markdown yang benar.
+                    - Jika **Simulasi:** Jelaskan skenario simulasi, peran siswa, dan pertanyaan analisis.
+                    - Jika **Praktik/Eksperimen:** Tuliskan daftar alat & bahan, prosedur kerja, dan tabel data hasil praktik/eksperimen. Pastikan membuat tabel menggunakan format markdown yang benar.
+                7.  **Analisis dan Kesimpulan:** Berikan 3-5 pertanyaan analisis yang menantang siswa untuk berpikir kritis.
+
+                Pastikan bahasa sesuai untuk siswa kelas ${grade} dan formatnya rapi menggunakan markdown.
+            `;
+
+            const generatedMarkdown = await generateContentFromApi(prompt);
+            lastGeneratedContent = generatedMarkdown; 
+            contentDiv.innerHTML = markdownToHtml(generatedMarkdown);
+            
+            generateRubricBtn.disabled = false;
+            exportWordBtn.disabled = false;
+            exportPdfBtn.disabled = false;
+        });
+        
+        // Event Listener for Rubric Generation
+        generateRubricBtn.addEventListener('click', async () => {
+             if (!lastGeneratedContent) {
+                alert("Harap buat LKPD terlebih dahulu sebelum membuat rubrik.");
+                return;
+             }
+            
+            const subject = document.getElementById('subject').value;
+            const grade = document.getElementById('grade').value;
+            const topic = document.getElementById('topic').value;
+            const method = document.getElementById('method').value;
+
+            const prompt = `
+                Anda adalah seorang ahli evaluasi pendidikan.
+                Berdasarkan LKPD berikut untuk mata pelajaran ${subject}, kelas ${grade}, dengan topik "${topic}" dan metode "${method}":
+
+                --- KONTEN LKPD ---
+                ${lastGeneratedContent}
+                --- AKHIR KONTEN LKPD ---
+
+                Buatkan sebuah **Rubrik Penilaian** yang komprehensif dalam format tabel markdown. Rubrik harus relevan dengan tujuan dan aktivitas dalam LKPD tersebut.
+                
+                Struktur rubrik:
+                1.  **Minimal 3 Aspek Penilaian** (Contoh: Pemahaman Konsep, Keterampilan Proses, Kemampuan Analisis).
+                2.  **4 Tingkat Kualitas/Skor:** Sangat Baik (4), Baik (3), Cukup (2), Perlu Bimbingan (1).
+                3.  **Deskriptor yang Jelas:** Berikan deskripsi perilaku spesifik untuk setiap sel tabel.
+
+                Format output HARUS berupa tabel markdown yang rapi dan benar.
+            `;
+            
+            const generatedMarkdown = await generateContentFromApi(prompt);
+            contentDiv.innerHTML += '<br><hr><br>' + markdownToHtml(generatedMarkdown);
+        });
+
+        // Export to Word
+        exportWordBtn.addEventListener('click', () => {
+            if (!contentDiv.innerHTML) return;
+            const header = `<meta charset='utf-8'><style>body{font-family:'Times New Roman', Times, serif; font-size: 12pt;} table{border-collapse:collapse;width:100%;} th,td{border:1px solid black;padding:8px;text-align:left;} th{background-color:#f2f2f2;} h1,h2,h3{color:#333;}</style>`;
+            const fullHtml = `<!DOCTYPE html><html><head>${header}</head><body>${contentDiv.innerHTML}</body></html>`;
+            const blob = htmlDocx.asBlob(fullHtml);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'LKPD_GuruPintar.docx';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Export to PDF
+        exportPdfBtn.addEventListener('click', () => {
+            if (!contentDiv.innerHTML) return;
+            const element = document.getElementById('content');
+            const opt = {
+                margin: 1, filename: 'LKPD_GuruPintar.pdf', image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().from(element).set(opt).save();
+        });
+
+    </script>
+</body>
+</html>
